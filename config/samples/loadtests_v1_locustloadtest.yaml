@@ -1,0 +1,7 @@
+apiVersion: loadtests.cndev.io/v1
+kind: LocustLoadTest
+metadata:
+  name: locustloadtest-sample
+spec:
+  # Add fields here
+  foo: bar
