@@ -24,9 +24,13 @@ import (
 
 // LocustLoadTestSpec defines the desired state of LocustLoadTest
 type LocustLoadTestSpec struct {
+	//HostURL is the url the loadtest is executed agains
 	HostURL       string `json: "HostURL"`
+	//LocustSpec is the locust file to define tests
 	LocustSpec    string `json: "LocustSpec"`
+	//TestDuration defines the duration of locaust test to run
 	TestDuration  string `json: "TestDuration"`
+	//NumberOfUsers is the maximum number of users to simulate
 	NumberOfUsers string `json: "NumberOfUsers"`
 }
 
