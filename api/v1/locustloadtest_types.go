@@ -24,8 +24,10 @@ import (
 
 // LocustLoadTestSpec defines the desired state of LocustLoadTest
 type LocustLoadTestSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	HostURL       string `json: "HostURL"`
+	LocustSpec    string `json: "LocustSpec"`
+	TestDuration  string `json: "TestDuration"`
+	NumberOfUsers string `json: "NumberOfUsers"`
 }
 
 // LocustLoadTestStatus defines the observed state of LocustLoadTest
