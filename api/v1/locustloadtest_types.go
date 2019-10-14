@@ -32,7 +32,7 @@ type LocustLoadTestSpec struct {
 	//TestDuration defines the duration of locaust test to run
 	SpecRepository  string `json: "SpecRepository"`
 	//NumberOfUsers is the maximum number of users to simulate
-	NumberOfUsers *int32 `json: "NumberOfUsers"`
+	Workers *int32 `json: "NumberOfUsers"`
 }
 
 // LocustLoadTestStatus defines the observed state of LocustLoadTest

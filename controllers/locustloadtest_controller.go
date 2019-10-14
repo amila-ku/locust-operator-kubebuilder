@@ -75,9 +75,39 @@ func (r *LocustLoadTestReconciler) Reconcile(req ctrl.Request) (ctrl.Result, err
 
 		r.Recorder.Eventf(&locustTest, core.EventTypeNormal, "Created", "Created deployment %q", deployment.Name)
 		log.Info("created Deployment resource for LocustLoadTest")
-		
+
 		return ctrl.Result{}, nil
 	}
+
+	// check for failure to get deployments
+	if err != nil {
+		log.Error(err, "failed to get Deployment for LocustLoadTest resource")
+		return ctrl.Result{}, err
+	}
+
+	// Replica Count handling
+	expectedReplicas := int32(1)
+
+	if locustTest.Spec.Workers != nil {
+		expectedReplicas = *locustTest.Spec.Workers
+	}
+
+	if *deployment.Spec.Replicas != expectedReplicas {
+		log.Info("updating replica count", "old_count", *deployment.Spec.Replicas, "new_count", expectedReplicas)
+
+		deployment.Spec.Replicas = &expectedReplicas
+		if err := r.Client.Update(ctx, &deployment); err != nil {
+			log.Error(err, "failed to Deployment update replica count")
+			return ctrl.Result{}, err
+		}
+
+		r.Recorder.Eventf(&locustTest, core.EventTypeNormal, "Scaled", "Scaled deployment %q to %d replicas", deployment.Name, expectedReplicas)
+
+		return ctrl.Result{}, nil
+	}
+
+	log.Info("replica count up to date", "replica_count", *deployment.Spec.Replicas)
+
 
 
 
