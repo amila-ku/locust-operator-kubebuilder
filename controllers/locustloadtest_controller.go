@@ -49,6 +49,34 @@ func (r *LocustLoadTestReconciler) Reconcile(req ctrl.Request) (ctrl.Result, err
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	// Clean up
+	if err := r.cleanupOwnedResources(ctx, log, &locustTest); err != nil {
+		log.Error(err, "failed to clean up old Deployment resources of LocustLoadTest")
+		return ctrl.Result{}, err
+	}
+
+	log = log.WithValues("deployment_name", locustTest.Spec.DeploymentName)
+
+	// Check if deployment exists for this type of resource
+	log.Info("checking if an existing Deployment exists for this resource")
+	deployment := apps.Deployment{}
+	err := r.Client.Get(ctx, client.ObjectKey{Namespace: locustTest.Namespace, Name: locustTest.Spec.DeploymentName}, &deployment)
+	if apierrors.IsNotFound(err) {
+		log.Info("could not find existing Deployment for LocustLoadTest, creating one...")
+
+		deployment = *buildDeployment(locustTest)
+		if err := r.Client.Create(ctx, &deployment); err != nil {
+			log.Error(err, "failed to create Deployment resource")
+			return ctrl.Result{}, err
+		}
+
+		r.Recorder.Eventf(&locustTest, core.EventTypeNormal, "Created", "Created deployment %q", deployment.Name)
+		log.Info("created Deployment resource for LocustLoadTest")
+		return ctrl.Result{}, nil
+	}
+
+
+
 	return ctrl.Result{}, nil
 }
 
