@@ -85,7 +85,7 @@ func (r *LocustLoadTestReconciler) Reconcile(req ctrl.Request) (ctrl.Result, err
 		return ctrl.Result{}, err
 	}
 
-	// Replica Count handling
+	// Replica Count handling, Scaling
 	expectedReplicas := int32(1)
 
 	if locustTest.Spec.Workers != nil {
@@ -108,8 +108,16 @@ func (r *LocustLoadTestReconciler) Reconcile(req ctrl.Request) (ctrl.Result, err
 
 	log.Info("replica count up to date", "replica_count", *deployment.Spec.Replicas)
 
+	// Update resource status
 
+	log.Info("updating LocustLoadTest resource status")
+	locustTest.Status.CurrentWorkers = deployment.Status.ReadyReplicas
+	if r.Client.Status().Update(ctx, &locustTest); err != nil {
+		log.Error(err, "failed to update LocustLoadTest status")
+		return ctrl.Result{}, err
+	}
 
+	log.Info("resource status synced")
 
 	return ctrl.Result{}, nil
 }

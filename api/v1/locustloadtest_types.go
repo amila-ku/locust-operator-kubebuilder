@@ -39,7 +39,7 @@ type LocustLoadTestSpec struct {
 type LocustLoadTestStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	CurrentPods int32 `json: "CurrentPods"`
+	CurrentWorkers int32 `json: "CurrentPods"`
 }
 
 // +kubebuilder:object:root=true
