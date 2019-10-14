@@ -39,6 +39,15 @@ func (r *LocustLoadTestReconciler) Reconcile(req ctrl.Request) (ctrl.Result, err
 	_ = r.Log.WithValues("locustloadtest", req.NamespacedName)
 
 	// your logic here
+	// Check if LocustLoadTest resources exists
+	log.Info("fetching LocustLoadTest resource")
+	locustTest := loadtestsv1.LocustLoadTest{}
+	if err := r.Client.Get(ctx, req.NamespacedName, &locustTest); err != nil {
+		log.Error(err, "failed to get LocustLoadTest resource")
+		// Ignore NotFound errors as they will be retried automatically if the
+		// resource is created in future.
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
 
 	return ctrl.Result{}, nil
 }
