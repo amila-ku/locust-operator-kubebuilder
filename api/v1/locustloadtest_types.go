@@ -16,6 +16,7 @@ limitations under the License.
 package v1
 
 import (
+	"cmd/go/internal/str"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -29,15 +30,16 @@ type LocustLoadTestSpec struct {
 	//LocustSpec is the locust file to define tests
 	LocustSpec    string `json: "LocustSpec"`
 	//TestDuration defines the duration of locaust test to run
-	TestDuration  string `json: "TestDuration"`
+	SpecRepository  string `json: "SpecRepository"`
 	//NumberOfUsers is the maximum number of users to simulate
-	NumberOfUsers string `json: "NumberOfUsers"`
+	NumberOfUsers *int32 `json: "NumberOfUsers"`
 }
 
 // LocustLoadTestStatus defines the observed state of LocustLoadTest
 type LocustLoadTestStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	CurrentPods int32 `json: "CurrentPods"`
 }
 
 // +kubebuilder:object:root=true
