@@ -16,6 +16,8 @@ limitations under the License.
 package controllers
 
 import (
+//	"github.com/onsi/ginkgo/internal/spec"
+	"cloud.google.com/go/pubsub/loadtest"
 	"context"
 
 	"github.com/go-logr/logr"
@@ -120,6 +122,73 @@ func (r *LocustLoadTestReconciler) Reconcile(req ctrl.Request) (ctrl.Result, err
 	log.Info("resource status synced")
 
 	return ctrl.Result{}, nil
+}
+
+// cleanupOwnedResources removes any existing resource of type
+func (r *LocustLoadTestReconciler) cleanupOwnedResources(ctx context.Context, log logr.Logger, loadTest *loadtestsv1.LocustLoadTest) error {
+	log.Info("finding existing Deployments for LocustLoadTest resource")
+
+	// List all deployment resources owned by this LocustLoadTest
+	var deployments apps.DeploymentList
+	if err := r.List(ctx, &deployments, client.InNamespace(loadTest.Namespace), client.MatchingField(deploymentOwnerKey, loadTest.Name)); err != nil {
+		return err
+	}
+
+	deleted := 0
+	for _, depl := range deployments.Items {
+		if depl.Name == loadTest.Spec.DeploymentName {
+			// If this deployment's name matches the one on the LocustLoadTest resource
+			// then do not delete it.
+			continue
+		}
+
+		if err := r.Client.Delete(ctx, &depl); err != nil {
+			log.Error(err, "failed to delete Deployment resource")
+			return err
+		}
+
+		r.Recorder.Eventf(loadTest, core.EventTypeNormal, "Deleted", "Deleted deployment %q", depl.Name)
+		deleted++
+	}
+
+	log.Info("finished cleaning up old Deployment resources", "number_deleted", deleted)
+
+	return nil
+}
+
+// buildDeployment defines deployment spec
+func buildDeployment(loadTest loadtestsv1.LocustLoadTest) *apps.Deployment {
+	deployment := apps.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            loadTest.Spec.DeploymentName,
+			Namespace:       loadTest.Namespace,
+			OwnerReferences: []metav1.OwnerReference{*metav1.NewControllerRef(&loadTest, mygroupv1beta1.GroupVersion.WithKind("LocustLoadTest"))},
+		},
+		Spec: apps.DeploymentSpec{
+			Replicas: loadTest.Spec.Replicas,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"loadtest-controller.cndev.io/deployment-name": loadTest.Spec.DeploymentName,
+				},
+			},
+			Template: core.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"loadtest-controller.cndev.io/deployment-name": loadTest.Spec.DeploymentName,
+					},
+				},
+				Spec: core.PodSpec{
+					Containers: []core.Container{
+						{
+							Name:  "locust",
+							Image: "swernst/locusts:latest",
+						},
+					},
+				},
+			},
+		},
+	}
+	return &deployment
 }
 
 func (r *LocustLoadTestReconciler) SetupWithManager(mgr ctrl.Manager) error {
