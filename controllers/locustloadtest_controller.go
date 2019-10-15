@@ -192,7 +192,27 @@ func buildDeployment(loadTest loadtestsv1.LocustLoadTest) *apps.Deployment {
 }
 
 func (r *LocustLoadTestReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	
+	if err := mgr.GetFieldIndexer().IndexField(&apps.Deployment{}, deploymentOwnerKey, func(rawObj runtime.Object) []string {
+		// grab the Deployment object, extract the owner...
+		depl := rawObj.(*apps.Deployment)
+		owner := metav1.GetControllerOf(depl)
+		if owner == nil {
+			return nil
+		}
+		// ...make sure it's a LocustLoadTest...
+		if owner.APIVersion != mygroupv1beta1.GroupVersion.String() || owner.Kind != "LocustLoadTest" {
+			return nil
+		}
+
+		// ...and if so, return it
+		return []string{owner.Name}
+	}); err != nil {
+		return err
+	}
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&loadtestsv1.LocustLoadTest{}).
+		Owns(&apps.Deployment{}).
 		Complete(r)
 }
