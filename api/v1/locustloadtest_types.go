@@ -27,20 +27,20 @@ import (
 type LocustLoadTestSpec struct {
 	DeploymentName string `json:"deploymentName"`
 	//HostURL is the url the loadtest is executed agains
-	HostURL       string `json:"hosturl"`
+	HostURL string `json:"hosturl"`
 	//LocustSpec is the locust file to define tests
-	LocustSpec    string `json:"locustspec"`
+	LocustSpec string `json:"locustspec"`
 	//TestDuration defines the duration of locaust test to run
-	SpecRepository  string `json:"specrepository"`
+	SpecRepository string `json:"specrepository"`
 	//NumberOfUsers is the maximum number of users to simulate
-	Workers *int32 `json:"workers"`
+	Workers *int32 `json:"workers,omitempty"`
 }
 
 // LocustLoadTestStatus defines the observed state of LocustLoadTest
 type LocustLoadTestStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	CurrentWorkers int32 `json:"currentworkers"`
+	CurrentWorkers int32 `json:"currentworkers,omitempty"`
 }
 
 // +kubebuilder:object:root=true
