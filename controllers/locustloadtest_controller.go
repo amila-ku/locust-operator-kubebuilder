@@ -16,11 +16,17 @@ limitations under the License.
 package controllers
 
 import (
-//	"github.com/onsi/ginkgo/internal/spec"
-	"cloud.google.com/go/pubsub/loadtest"
+	//	"github.com/onsi/ginkgo/internal/spec"
+	//"cloud.google.com/go/pubsub/loadtest"
 	"context"
 
 	"github.com/go-logr/logr"
+	apps "k8s.io/api/apps/v1"
+	core "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -31,14 +37,20 @@ import (
 type LocustLoadTestReconciler struct {
 	client.Client
 	Log logr.Logger
+
+	Recorder record.EventRecorder
 }
+
+var (
+	deploymentOwnerKey = ".metadata.controller"
+)
 
 // +kubebuilder:rbac:groups=loadtests.cndev.io,resources=locustloadtests,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=loadtests.cndev.io,resources=locustloadtests/status,verbs=get;update;patch
 
 func (r *LocustLoadTestReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	_ = context.Background()
-	_ = r.Log.WithValues("locustloadtest", req.NamespacedName)
+	ctx := context.Background()
+	log := r.Log.WithValues("locustloadtest", req.NamespacedName)
 
 	// your logic here
 	// Check if LocustLoadTest resources exists
@@ -162,10 +174,10 @@ func buildDeployment(loadTest loadtestsv1.LocustLoadTest) *apps.Deployment {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            loadTest.Spec.DeploymentName,
 			Namespace:       loadTest.Namespace,
-			OwnerReferences: []metav1.OwnerReference{*metav1.NewControllerRef(&loadTest, mygroupv1beta1.GroupVersion.WithKind("LocustLoadTest"))},
+			OwnerReferences: []metav1.OwnerReference{*metav1.NewControllerRef(&loadTest, loadtestsv1.GroupVersion.WithKind("LocustLoadTest"))},
 		},
 		Spec: apps.DeploymentSpec{
-			Replicas: loadTest.Spec.Replicas,
+			Replicas: loadTest.Spec.Workers,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"loadtest-controller.cndev.io/deployment-name": loadTest.Spec.DeploymentName,
@@ -192,7 +204,7 @@ func buildDeployment(loadTest loadtestsv1.LocustLoadTest) *apps.Deployment {
 }
 
 func (r *LocustLoadTestReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	
+
 	if err := mgr.GetFieldIndexer().IndexField(&apps.Deployment{}, deploymentOwnerKey, func(rawObj runtime.Object) []string {
 		// grab the Deployment object, extract the owner...
 		depl := rawObj.(*apps.Deployment)
@@ -201,7 +213,7 @@ func (r *LocustLoadTestReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			return nil
 		}
 		// ...make sure it's a LocustLoadTest...
-		if owner.APIVersion != mygroupv1beta1.GroupVersion.String() || owner.Kind != "LocustLoadTest" {
+		if owner.APIVersion != loadtestsv1.GroupVersion.String() || owner.Kind != "LocustLoadTest" {
 			return nil
 		}
 

@@ -20,11 +20,13 @@ import (
 	"os"
 
 	loadtestsv1 "_/projects/locust-operator/api/v1"
+	controllers "_/projects/locust-operator/controllers"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	//"cndev.io/project/locust-operator/controllers"
 	// +kubebuilder:scaffold:imports
 )
 

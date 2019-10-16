@@ -405,7 +405,6 @@ spec:
           - hosturl
           - locustspec
           - specrepository
-          - workers
           type: object
         status:
           properties:
@@ -415,8 +414,6 @@ spec:
                 this file'
               format: int32
               type: integer
-          required:
-          - currentworkers
           type: object
       type: object
   versions:
