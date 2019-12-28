@@ -193,7 +193,7 @@ func buildDeployment(loadTest loadtestsv1.LocustLoadTest) *apps.Deployment {
 					Containers: []core.Container{
 						{
 							Name:  "locust",
-							Image: "swernst/locusts:latest",
+							Image: "locustio/locust:latest",
 						},
 					},
 				},
